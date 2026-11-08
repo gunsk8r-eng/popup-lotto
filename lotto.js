@@ -6,6 +6,7 @@
       ?lc=osiris168-com  → โหลดไลฟ์แชท https://osiris168-com.livechat.cv ให้ด้วย
       &fb=1              → โหลดตารางบอล (football.js) ให้ด้วย
       &auto=0            → ปิดการเด้งเองในวันหวยออก
+      &v=2               → เลขเวอร์ชัน: อัปไฟล์ใหม่เมื่อไหร่ให้เปลี่ยนเลขนี้ (3, 4, …) ผู้เข้าเว็บจะได้ไฟล์ใหม่ทันที
 */
 (function () {
   var me = document.currentScript, Q = function (k) {
@@ -29,7 +30,7 @@
 
   function addScript(src) { var s = document.createElement('script'); s.src = src; s.defer = true; document.head.appendChild(s); }
   if (/^[\w-]+$/.test(Q('lc'))) addScript('https://' + Q('lc') + '.livechat.cv/widget.js?version=v2');
-  if (Q('fb') === '1') addScript(CFG.football);
+  if (Q('fb') === '1') addScript(CFG.football + (Q('v') ? '?v=' + encodeURIComponent(Q('v')) : ''));
 
   var PRIZE = [
     ['first', 'รางวัลที่ 1', 6000000, 6], ['near1', 'ข้างเคียงรางวัลที่ 1', 100000, 6],
