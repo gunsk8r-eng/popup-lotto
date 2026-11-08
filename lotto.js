@@ -1,7 +1,8 @@
 /* ===== ป๊อปอัปหวย (ผลสลาก / ตรวจหวย / ย้อนหลัง / นับถอยหลัง / เลขเด็ด / เด้งเองวันหวยออก) =====
    ใช้ได้ 2 แบบ
    1) วางโค้ดทั้งไฟล์ในช่อง JS ของเว็บ
-   2) แท็กลิงก์: <script src="https://cdn.jsdelivr.net/gh/<บัญชี>/<repo>@main/lotto.js?lc=<ไลฟ์แชท>&fb=1" defer></script>
+   2) แท็กลิงก์ script src ไปที่ https://cdn.jsdelivr.net/gh/(บัญชี)/(repo)@main/lotto.js?lc=(ไลฟ์แชท)&fb=1 แบบ defer
+      (ห้ามเขียนแท็กปิด script ไว้ในคอมเมนต์นี้ เพราะตอนวางในช่อง JS จะทำให้โค้ดพัง)
       ?lc=osiris168-com  → โหลดไลฟ์แชท https://osiris168-com.livechat.cv ให้ด้วย
       &fb=1              → โหลดตารางบอล (football.js) ให้ด้วย
       &auto=0            → ปิดการเด้งเองในวันหวยออก
@@ -21,7 +22,8 @@
       : 'https://raw.githubusercontent.com/gunsk8r-eng/popup-lotto/main/lotto.json'), // ไฟล์ผลหวยที่ GitHub อัปเดตให้
     football: 'https://cdn.jsdelivr.net/gh/gunsk8r-eng/popup-football@main/football.js',
     autoOpen: Q('auto') !== '0',   // เด้งเองวันหวยออก (ครั้งเดียวต่อการเปิดเว็บ)
-    btnText: '🎫 ผลหวย'
+    btnIcon: '🎫',
+    btnText: 'ผลหวย'
   };
   // ==================
 
@@ -44,7 +46,9 @@
     '  background:linear-gradient(180deg,#d4001f,#8a0012);color:#fff!important;font:inherit;font-weight:700;cursor:grab;box-shadow:3px 4px 14px #0005}',
     '#ltW.r #ltB{border-right:0;border-left:3px solid #ffd36b;border-radius:14px 0 0 14px}',
     '#ltW.drag #ltB{cursor:grabbing;box-shadow:0 10px 26px #0008}',
-    '#ltB span{display:block;writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:1px}',
+    '#ltB i{display:block;font-style:normal;font-size:18px;text-align:center}',
+    '#ltB span{display:block;margin-top:4px;writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:1px}',
+    // ย่อปุ่ม (กด ✕) เหลือแค่ไอคอนเล็กๆ ติดขอบจอ กดอีกครั้งเพื่อเปิดผลหวยได้เหมือนเดิม
     '#ltB.ltDot::after{content:"";position:absolute;bottom:-4px;right:-4px;width:12px;height:12px;border-radius:50%;background:#ffd36b;box-shadow:0 0 0 2px #8a0012;animation:ltBlink 1s infinite}',
     '#ltHd{position:absolute;top:-9px;right:-9px;z-index:1;width:22px;height:22px;padding:0;border:2px solid #fff;border-radius:50%;background:#333;color:#fff!important;font-size:11px;line-height:1;cursor:pointer}',
     '#ltW.r #ltHd{right:auto;left:-9px}',
@@ -121,8 +125,8 @@
   function go() {
     var d = document, st = d.createElement('style'), w = d.createElement('div');
     st.textContent = CSS; d.head.appendChild(st);
-    w.innerHTML = '<div id="ltW"><button id="ltB" aria-label="ผลหวย (ลากเพื่อย้ายได้)" title="กดเพื่อดูผลหวย · ลากเพื่อย้าย"><span>' + CFG.btnText + '</span></button>' +
-      '<button id="ltHd" aria-label="ซ่อนปุ่มผลหวย 24 ชั่วโมง" title="ซ่อนปุ่ม 24 ชั่วโมง">✕</button></div>' +
+    w.innerHTML = '<div id="ltW"><button id="ltB" aria-label="ผลหวย (ลากเพื่อย้ายได้)" title="กดเพื่อดูผลหวย · ลากเพื่อย้าย"><i>' + CFG.btnIcon + '</i><span>' + CFG.btnText + '</span></button>' +
+      '<button id="ltHd" aria-label="ปิดปุ่มผลหวย" title="ปิด (รีเฟรชแล้วกลับมา)">✕</button></div>' +
       '<div id="ltO" role="dialog" aria-modal="true" aria-label="ผลสลากกินแบ่งรัฐบาล"><div id="ltP"><div id="ltH"><b>ผลสลากกินแบ่งรัฐบาล</b>' +
       '<button id="ltX" aria-label="ปิด">✕</button><div id="ltCd"></div><nav>' +
       '<button data-t="r">ผลล่าสุด</button><button data-t="c">ตรวจหวย</button><button data-t="h">ย้อนหลัง</button><button data-t="s">เลขเด็ด</button>' +
@@ -299,8 +303,8 @@
 
     // ===== ปุ่มข้างจอ: ลากย้าย / ซ่อน =====
     function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) {} }
-    var hidden = +(ls('ltHide') || 0) > now();
-    if (hidden) W.style.display = 'none';
+    try { localStorage.removeItem('ltHide'); localStorage.removeItem('ltMini'); } catch (e) {} // ล้างค่าซ่อน/ย่อ ของเวอร์ชันเก่า
+    var hidden = false; // กด ✕ = ซ่อนเฉพาะหน้านี้ รีเฟรชแล้วปุ่มกลับมา
     try { var pos = JSON.parse(ls('ltPos') || 'null'); if (pos) { W.classList.toggle('r', !!pos.r); W.style.top = pos.t + '%'; } } catch (e) {}
 
     var drag = null, justDragged = false;
@@ -326,8 +330,11 @@
     }
     B.addEventListener('pointerup', endDrag);
     B.addEventListener('pointercancel', endDrag);
-    B.onclick = function () { if (justDragged) { justDragged = false; return; } open(); };
-    g('ltHd').onclick = function () { W.style.display = 'none'; hidden = true; ls('ltHide', String(now() + 864e5)); };
+    B.onclick = function () {
+      if (justDragged) { justDragged = false; return; }
+      open();
+    };
+    g('ltHd').onclick = function () { hidden = true; W.style.display = 'none'; };
 
     // ===== ลากย้ายป๊อปอัปด้วยแถบหัว =====
     var pd = null;
