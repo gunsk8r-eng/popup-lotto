@@ -14,14 +14,14 @@
   var PG_DATE = '@@PG_DATE@@', PG = '@@PG_DATA@@';
   var PG_IMG = 'https://www.pgsoft.com/uploads/Games/Images/';
   // ===== ข้อมูล Pragmatic Play จาก pragmaticplay.com (RTP ในหน้าแต่ละเกม) — ชื่อ|RTP คั่นด้วย ; =====
-  var PP_DATE = '@@PP_DATE@@', PP = '@@PP_DATA@@';
+  var PP_DATE = '@@PP_DATE@@', PP = '@@PP_DATA@@', PP_IMG = 'https://www.pragmaticplay.com/wp-content/uploads/';
 
   var PROV = [
     ['pg', 'PG Soft', 'pgsoft.com'], ['pp', 'Pragmatic Play', 'pragmaticplay.com'], ['xo', 'SlotXO', ''], ['ns', 'Nextspin', ''], ['rs', 'RoyalSlot', '']
   ];
   function games(k) {
     var ex = (EXTRA[k] || []).map(function (a, i) { return { n: a[0], r: +a[1], w: a[2] || '', img: a[3] || '', i: -1 - i }; });
-    if (k === 'pp' && PP) return ex.concat(PP.split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: '', img: '', i: i }; }));
+    if (k === 'pp' && PP) return ex.concat(PP.split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: a[2] || '', img: a[3] ? PP_IMG + a[3] : '', i: i }; }));
     if (k === 'pg') return PG.split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: a[2], img: a[3] ? PG_IMG + a[3] : '', i: i }; });
     return (EXTRA[k] || []).map(function (a, i) { return { n: a[0], r: +a[1], w: a[2] || '', img: a[3] || '', i: i }; });
   }
@@ -112,6 +112,7 @@
     }
     function render(anim) {
       var list = games(prov), q = g('rtQ').value.trim().toLowerCase(), s = g('rtS').value, p = PROV.filter(function (x) { return x[0] === prov; })[0];
+      g('rtS').options[1].text = prov === 'pp' ? 'ยอดนิยม' : 'เกมใหม่';
       if (q) list = list.filter(function (x) { return x.n.toLowerCase().indexOf(q) >= 0; });
       list.sort(s === 'r' ? function (a, b) { return b.r - a.r || a.i - b.i; } : s === 'a' ? function (a, b) { return a.n.localeCompare(b.n); } : function (a, b) { return a.i - b.i; });
       var h;
@@ -126,7 +127,12 @@
         'RTP คือค่าทางทฤษฎีจากการเล่นจำนวนมหาศาล ไม่ใช่โอกาสชนะในแต่ละครั้ง และไม่เปลี่ยนตามช่วงเวลา · ' +
         'ตัวเลขนี้คือค่าสูงสุดที่ค่ายประกาศ เว็บที่ให้บริการอาจตั้งเวอร์ชัน RTP ต่ำกว่านี้ ตรวจได้ในหน้าข้อมูลของแต่ละเกม · เล่นอย่างมีสติ 18+</p>';
       if (anim) countUp();
-      [].forEach.call(C.querySelectorAll('img'), function (im) { im.onerror = function () { var s = d.createElement('span'); s.className = 'ph'; s.textContent = '🎰'; im.replaceWith(s); }; });
+      // รูปโหลดไม่ได้ หรือได้รูปว่าง 1×1 (เว็บต้นทางกันการดึงรูปไปใช้) → แสดง 🎰 แทน
+      [].forEach.call(C.querySelectorAll('img'), function (im) {
+        var bad = function () { if (!im.parentNode) return; var s = d.createElement('span'); s.className = 'ph'; s.textContent = '🎰'; im.replaceWith(s); };
+        im.onerror = bad; im.onload = function () { if (im.naturalWidth < 2) bad(); };
+        if (im.complete && im.naturalWidth && im.naturalWidth < 2) bad();
+      });
     }
     function setProv(k) {
       prov = k;

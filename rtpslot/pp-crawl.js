@@ -19,8 +19,8 @@ async function get(url) {
   const games = new Map();
   const add = html => {
     let n = 0;
-    for (const m of html.matchAll(/class="game__thumbnail" title="([^"]+)"\s+href="https:\/\/www\.pragmaticplay\.com\/en\/games\/([^/"?]+)\//g)) {
-      if (!games.has(m[2])) { games.set(m[2], { slug: m[2], n: dec(m[1]) }); n++; }
+    for (const m of html.matchAll(/class="game__thumbnail" title="([^"]+)"\s+href="https:\/\/www\.pragmaticplay\.com\/en\/games\/([^/"?]+)\/[^"]*">[\s\S]*?data-src="https:\/\/www\.pragmaticplay\.com\/wp-content\/uploads\/([^"]+)"/g)) {
+      if (!games.has(m[2])) { games.set(m[2], { slug: m[2], n: dec(m[1]), img: m[3] }); n++; }
     }
     return n;
   };
@@ -31,6 +31,13 @@ async function get(url) {
     await sleep(300);
   }
   console.log('พบเกม', games.size);
+  if (process.argv[2] === '--images') {
+    const f = __dirname + '/pp.json', j = JSON.parse(fs.readFileSync(f, 'utf8')), by = {};
+    games.forEach(g => { by[g.n] = g.img; });
+    j.games.forEach(g => { if (by[g[0]]) g[2] = by[g[0]]; });
+    fs.writeFileSync(f, JSON.stringify(j));
+    return console.log('ใส่รูป', j.games.filter(g => g[2]).length, '/', j.games.length);
+  }
 
   // 2) RTP จากหน้าแต่ละเกม ("Basic Game Info · RTP: 96.50%") — เรียงตามลำดับในเว็บ (ใหม่ → เก่า)
   const out = [];
@@ -40,7 +47,7 @@ async function get(url) {
     try {
       const h = await get(BASE + g.slug + '/');
       const m = /RTP:\s*<span>\s*([\d.]+)\s*%/.exec(h);
-      if (m) out.push([g.n, +m[1]]);
+      if (m) out.push([g.n, +m[1], g.img]); // img = path ใต้ wp-content/uploads/
     } catch (e) { console.warn(e.message); }
     if (i % 50 === 0) console.log(i, '/', games.size, '· มี RTP', out.length);
     await sleep(250);
