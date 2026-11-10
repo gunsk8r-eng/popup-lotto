@@ -22,11 +22,17 @@ const API = 'https://api.pgsoft.com/Game/GetDefaultAllGame/language/en-US';
   const popular = fs.readFileSync(__dirname + '/pp-popular.txt', 'utf8').split('\n').map(s => s.trim()).filter(s => s && s[0] !== '#');
   const ppSel = popular.map(n => byName.get(norm(n))).filter(Boolean);
   if (ppSel.length !== popular.length) console.warn('pp-popular: ไม่พบ', popular.filter(n => !byName.has(norm(n))));
+  // ไอคอนที่ฝังในไฟล์ (สร้างด้วย node rtpslot/pp-icons.js) — เรียงตรงกับ ppSel
+  let icons = {};
+  try { icons = JSON.parse(fs.readFileSync(__dirname + '/pp-icons.json', 'utf8')); } catch (e) { console.warn('ไม่มี pp-icons.json — ใช้รูปจากเว็บ Pragmatic'); }
+  const iconOf = new Map(Object.keys(icons).map(k => [norm(k), icons[k]]));
+  const ppIcons = ppSel.map(g => iconOf.get(norm(g[0])) || '');
   const ppData = ppSel.map(g => [clean(g[0]), g[1], '', g[2] || ''].join('|')).join(';');
   const thd = iso => iso ? new Date(iso + 'T12:00:00Z').toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' }) : '';
   const today = new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit', timeZone: 'Asia/Bangkok' });
   const src = fs.readFileSync(__dirname + '/rtpslot.src.js', 'utf8')
     .replace("'@@PG_DATA@@'", JSON.stringify(data)).replace("'@@PG_DATE@@'", JSON.stringify(today))
+    .replace("'@@PP_ICON@@'", JSON.stringify(ppIcons))
     .replace("'@@PP_DATA@@'", JSON.stringify(ppData)).replace("'@@PP_DATE@@'", JSON.stringify(thd(pp.date)));
   const full = __dirname + '/popup-rtpslot.full.js';
   fs.writeFileSync(full, src);
@@ -36,5 +42,5 @@ const API = 'https://api.pgsoft.com/Game/GetDefaultAllGame/language/en-US';
     "   เพิ่มเกมค่ายอื่น: window.RTP_EXTRA = { xo: [['ชื่อเกม', 96.5, '5000x']], ns: [], rs: [] }; */\n";
   const out = __dirname + '/popup-rtpslot.js';
   fs.writeFileSync(out, head + min);
-  console.log('PG', slots.length, '· PP', ppSel.length, '(มีรูป ' + ppSel.filter(g => g[2]).length + ') เกม ·', Buffer.byteLength(head + min), 'ไบต์ →', out);
+  console.log('PG', slots.length, '· PP', ppSel.length, '(ฝังรูป ' + ppIcons.filter(Boolean).length + ') เกม ·', Buffer.byteLength(head + min), 'ไบต์ →', out);
 })().catch(e => { console.error(e); process.exit(1); });

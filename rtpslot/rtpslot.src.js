@@ -15,13 +15,14 @@
   var PG_IMG = 'https://www.pgsoft.com/uploads/Games/Images/';
   // ===== ข้อมูล Pragmatic Play จาก pragmaticplay.com (RTP ในหน้าแต่ละเกม) — ชื่อ|RTP คั่นด้วย ; =====
   var PP_DATE = '@@PP_DATE@@', PP = '@@PP_DATA@@', PP_IMG = 'https://www.pragmaticplay.com/wp-content/uploads/';
+  var PP_ICON = '@@PP_ICON@@'; // ไอคอน 88×88 ที่ฝังในไฟล์ (เรียงตรงกับ PP)
 
   var PROV = [
     ['pg', 'PG Soft', 'pgsoft.com'], ['pp', 'Pragmatic Play', 'pragmaticplay.com'], ['xo', 'SlotXO', ''], ['ns', 'Nextspin', ''], ['rs', 'RoyalSlot', '']
   ];
   function games(k) {
     var ex = (EXTRA[k] || []).map(function (a, i) { return { n: a[0], r: +a[1], w: a[2] || '', img: a[3] || '', i: -1 - i }; });
-    if (k === 'pp' && PP) return ex.concat(PP.split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: a[2] || '', img: a[3] ? PP_IMG + a[3] : '', i: i }; }));
+    if (k === 'pp' && PP) return ex.concat(PP.split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: a[2] || '', img: PP_ICON[i] || (a[3] ? PP_IMG + a[3] : ''), i: i }; }));
     if (k === 'pg') return PG.split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: a[2], img: a[3] ? PG_IMG + a[3] : '', i: i }; });
     return (EXTRA[k] || []).map(function (a, i) { return { n: a[0], r: +a[1], w: a[2] || '', img: a[3] || '', i: i }; });
   }
