@@ -1,4 +1,4 @@
-// ดาวน์โหลดรูปของเกม Pragmatic Play ที่อยู่ใน pp-popular.txt → ย่อเป็นไอคอนสี่เหลี่ยม 88×88 (webp)
+// ดาวน์โหลดรูปของเกม Pragmatic Play ที่อยู่ใน pp-popular.txt → ย่อเป็นไอคอนสี่เหลี่ยม 48×48 (webp)
 // → rtpslot/pp-icons.json { ชื่อเกม: "data:image/webp;base64,..." } ให้ build.js ฝังลงในไฟล์ JS
 // ใช้: node rtpslot/pp-icons.js   (ต้องมี python3 + Pillow สำหรับย่อรูป)
 const fs = require('fs'), os = require('os'), path = require('path'), { execFileSync } = require('child_process');
@@ -26,7 +26,7 @@ const norm = s => s.toLowerCase().replace(/[®™]/g, '').replace(/[–—]/g, '
     }
     await sleep(300);
   }
-  // ย่อรูป: ตัดตรงกลางเป็นสี่เหลี่ยมจัตุรัส → 88×88 webp
+  // ย่อรูป: ตัดตรงกลางเป็นสี่เหลี่ยมจัตุรัส → 48×48 webp (เล็กพอให้ระบบหลังบ้านของเว็บบันทึกทัน)
   const py = `
 import sys, json, base64, io
 from PIL import Image
@@ -34,8 +34,8 @@ out = {}
 for name, f in json.load(open(sys.argv[1])):
     src = Image.open(f).convert('RGBA'); im = Image.new('RGB', src.size, (255, 255, 255)); im.paste(src, mask=src)  # พื้นโปร่งใส → ขาว
     w, h = im.size; s = min(w, h)
-    im = im.crop(((w - s) // 2, (h - s) // 2, (w - s) // 2 + s, (h - s) // 2 + s)).resize((88, 88), Image.LANCZOS)
-    b = io.BytesIO(); im.save(b, 'WEBP', quality=72, method=6)
+    im = im.crop(((w - s) // 2, (h - s) // 2, (w - s) // 2 + s, (h - s) // 2 + s)).resize((48, 48), Image.LANCZOS)
+    b = io.BytesIO(); im.save(b, 'WEBP', quality=50, method=6)
     out[name] = 'data:image/webp;base64,' + base64.b64encode(b.getvalue()).decode()
 json.dump(out, open(sys.argv[2], 'w'))
 `;
