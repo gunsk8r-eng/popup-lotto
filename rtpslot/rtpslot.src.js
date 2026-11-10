@@ -15,14 +15,16 @@
   var PG_IMG = 'https://www.pgsoft.com/uploads/Games/Images/';
   // ===== ข้อมูล Pragmatic Play จาก pragmaticplay.com (RTP ในหน้าแต่ละเกม) — ชื่อ|RTP คั่นด้วย ; =====
   var PP_DATE = '@@PP_DATE@@', PP = '@@PP_DATA@@', PP_IMG = 'https://www.pragmaticplay.com/wp-content/uploads/';
-  // ไอคอนอยู่ในไฟล์แยก popup-rtpslot-icons.js (window.RTP_PP_ICONS = { ชื่อเกม: รูป }) — ไม่มีไฟล์นั้นก็ใช้รูปจากเว็บ Pragmatic
+  // ไอคอนอยู่ในไฟล์แยก popup-rtpslot-icons.js (window.RTP_PP_SPRITE = รูปรวมหลายเกม) — ไม่มีไฟล์นั้นก็ใช้รูปจากเว็บ Pragmatic
 
   var PROV = [
     ['pg', 'PG Soft', 'pgsoft.com'], ['pp', 'Pragmatic Play', 'pragmaticplay.com'], ['xo', 'SlotXO', ''], ['ns', 'Nextspin', ''], ['rs', 'RoyalSlot', '']
   ];
+  function spriteIdx(n) { var S = window.RTP_PP_SPRITE; return S && S.idx[n] != null ? S.idx[n] : -1; }
+  var spriteCss = false;
   function games(k) {
     var ex = (EXTRA[k] || []).map(function (a, i) { return { n: a[0], r: +a[1], w: a[2] || '', img: a[3] || '', i: -1 - i }; });
-    if (k === 'pp' && PP) return ex.concat(PP.split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: a[2] || '', img: (window.RTP_PP_ICONS || {})[a[0]] || (a[3] ? PP_IMG + a[3] : ''), i: i }; }));
+    if (k === 'pp' && PP) return ex.concat(PP.split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: a[2] || '', sp: spriteIdx(a[0]), img: a[3] ? PP_IMG + a[3] : '', i: i }; }));
     if (k === 'pg') return PG.split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: a[2], img: a[3] ? PG_IMG + a[3] : '', i: i }; });
     return (EXTRA[k] || []).map(function (a, i) { return { n: a[0], r: +a[1], w: a[2] || '', img: a[3] || '', i: i }; });
   }
@@ -121,6 +123,12 @@
       else if (!list.length) h = '<p class="rtE">ไม่พบเกมที่ค้นหา</p>';
       else h = list.map(function (x) {
         var pct = Math.max(0, Math.min(100, (x.r - 90) * 12.5)); // แถบ: 90% = ว่าง, 98% = เต็ม
+        var S = window.RTP_PP_SPRITE;
+        if (S && x.sp >= 0) {
+          if (!spriteCss) { spriteCss = true; var st2 = d.createElement('style'); st2.textContent = '.rtR .sp{display:block;flex:none;width:44px;height:44px;border-radius:10px;background:url(' + S.img + ') no-repeat;background-size:' + S.cols * 44 + 'px auto}'; d.head.appendChild(st2); }
+          return '<div class="rtR"><span class="sp" style="background-position:-' + (x.sp % S.cols) * 44 + 'px -' + Math.floor(x.sp / S.cols) * 44 + 'px"></span>' +
+            '<div><b>' + esc(x.n) + '</b>' + (x.w ? '<small>ชนะสูงสุด ' + esc(x.w) + '</small>' : '') + '<i><u data-w="' + pct + '" style="width:' + pct + '%"></u></i></div><em data-r="' + x.r + '">' + x.r.toFixed(2) + '%</em></div>';
+        }
         return '<div class="rtR">' + (x.img ? '<img loading="lazy" alt="" src="' + esc(x.img) + '">' : '<span class="ph">' + esc(x.n.charAt(0)) + '</span>') +
           '<div><b>' + esc(x.n) + '</b>' + (x.w ? '<small>ชนะสูงสุด ' + esc(x.w) + '</small>' : '') + '<i><u data-w="' + pct + '" style="width:' + pct + '%"></u></i></div><em data-r="' + x.r + '">' + x.r.toFixed(2) + '%</em></div>';
       }).join('');
