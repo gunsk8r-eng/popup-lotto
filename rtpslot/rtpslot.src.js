@@ -18,6 +18,9 @@
   // ===== ข้อมูล Nextspin จาก nextspin.com (RTP ในหน้ารายละเอียดเกม) — ชื่อ|RTP||รูป =====
   var NS_DATE = '@@NS_DATE@@', NS = '@@NS_DATA@@', NS_IMG = 'https://www.nextspin.com/';
   // ไอคอนอยู่ในไฟล์แยก popup-rtpslot-icons.js (window.RTP_SPRITES = { pp: รูปรวม, ns: รูปรวม }) — ไม่มีไฟล์นั้นก็ใช้รูปจากเว็บค่าย
+  // โหลดไฟล์ไอคอนเองจาก CDN (ล็อกเวอร์ชันด้วย commit) — ไม่ต้องวางไฟล์ไอคอนในช่อง JS
+  // เปลี่ยนที่โหลดได้ด้วย window.RTP_OPT = { icons: 'ลิงก์ไฟล์ไอคอน' } หรือ icons: '' เพื่อปิด
+  var ICONS_URL = OPT.icons != null ? OPT.icons : 'https://cdn.jsdelivr.net/gh/gunsk8r-eng/popup-lotto@@@ICONS_SHA@@/rtpslot/popup-rtpslot-icons.js';
   var SRC = { pp: [function () { return PP; }, PP_IMG], ns: [function () { return NS; }, NS_IMG] };
 
   var PROV = [
@@ -188,6 +191,11 @@
     g('rtQ').oninput = function () { render(false); }; g('rtS').onchange = function () { render(true); };
     [].forEach.call(d.querySelectorAll('#rtT button'), function (b) { b.onclick = function () { setProv(b.getAttribute('data-k')); }; });
     setProv('pg');
+    if (!window.RTP_SPRITES && ICONS_URL) {
+      var sc = d.createElement('script'); sc.src = ICONS_URL; sc.async = true;
+      sc.onload = function () { if (O.className.indexOf('on') >= 0) render(false); };
+      d.head.appendChild(sc);
+    }
   }
 
   if (document.body) go(); else document.addEventListener('DOMContentLoaded', go);

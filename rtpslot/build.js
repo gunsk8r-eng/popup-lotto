@@ -44,6 +44,7 @@ const API = 'https://api.pgsoft.com/Game/GetDefaultAllGame/language/en-US';
   const src = fs.readFileSync(__dirname + '/rtpslot.src.js', 'utf8')
     .replace("'@@PG_DATA@@'", JSON.stringify(data)).replace("'@@PG_DATE@@'", JSON.stringify(today))
     .replace("'@@PP_DATA@@'", JSON.stringify(ppData)).replace("'@@PP_DATE@@'", JSON.stringify(thd(pp.date)))
+    .replace('@@ICONS_SHA@@', process.env.ICONS_SHA || 'main')  // commit ที่มีไฟล์ไอคอนเวอร์ชันนี้ (ตั้งตอน build)
     .replace("'@@NS_DATA@@'", JSON.stringify(nsData)).replace("'@@NS_DATE@@'", JSON.stringify(thd(ns.date)));
   const full = __dirname + '/popup-rtpslot.full.js';
   fs.writeFileSync(full, src);
