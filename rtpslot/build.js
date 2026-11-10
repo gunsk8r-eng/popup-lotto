@@ -28,7 +28,7 @@ const API = 'https://api.pgsoft.com/Game/GetDefaultAllGame/language/en-US';
   const nsData = ns.games.map(g => [clean(g[0]), g[1], g[2] || '', g[3] || ''].join('|')).join(';');
   // ไอคอน: รูปรวม (sprite) ต่อค่าย จาก node rtpslot/icons.js [ns] → ไฟล์แยก popup-rtpslot-icons.js (วางในช่อง JS อีกช่อง)
   const sprites = {}, iconFile = __dirname + '/popup-rtpslot-icons.js';
-  for (const k of ['pp', 'ns']) {
+  for (const k of ['pp']) { // Nextspin โหลดรูปจากเว็บเขาได้ตรงๆ จึงไม่ต้องฝัง
     try {
       const ic = JSON.parse(fs.readFileSync(__dirname + '/' + k + '-icons.json', 'utf8')), idx = {};
       ic.names.forEach((n, i) => { idx[clean(n)] = i; });
@@ -36,7 +36,7 @@ const API = 'https://api.pgsoft.com/Game/GetDefaultAllGame/language/en-US';
     } catch (e) { console.warn('ไม่มี ' + k + '-icons.json — ใช้รูปจากเว็บค่าย'); }
   }
   const nIcons = Object.values(sprites).reduce((a, s) => a + Object.keys(s.idx).length, 0);
-  fs.writeFileSync(iconFile, '/* ไอคอนเกมสำหรับ popup-rtpslot (Pragmatic Play + Nextspin, ' + nIcons + ' เกม) */\n' +
+  fs.writeFileSync(iconFile, '/* ไอคอนเกมสำหรับ popup-rtpslot (Pragmatic Play, ' + nIcons + ' เกม) */\n' +
     'window.RTP_SPRITES=' + JSON.stringify(sprites) + ';\n');
   const ppData = ppSel.map(g => [clean(g[0]), g[1], '', g[2] || ''].join('|')).join(';');
   const thd = iso => iso ? new Date(iso + 'T12:00:00Z').toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' }) : '';
