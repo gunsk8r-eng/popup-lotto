@@ -4,7 +4,7 @@
    ตั้งค่า (ไม่บังคับ) วางก่อนโค้ดนี้:
      window.RTP_OPT = { side: 'right', top: 50, btnText: 'RTP สล็อต' };
    เพิ่มเกมของค่ายอื่นเอง (ดูค่า RTP ได้ในหน้าข้อมูลเกม/ตารางจ่ายของแต่ละเกม):
-     window.RTP_EXTRA = { pp: [['Gates of Olympus', 96.5, '5000x', 'ลิงก์รูป (ไม่บังคับ)']], xo: [...], ns: [...], rs: [...] };
+     window.RTP_EXTRA = { xo: [['ชื่อเกม', 96.5, '5000x', 'ลิงก์รูป (ไม่บังคับ)']], ns: [...], rs: [...] };
 */
 (function () {
   var OPT = window.RTP_OPT || {}, EXTRA = window.RTP_EXTRA || {};
@@ -13,11 +13,15 @@
   // ===== ข้อมูล PG Soft จาก pgsoft.com (maxrtp) — ชื่อ|RTP|ชนะสูงสุด|ไอคอน คั่นด้วย ; เรียงจากเกมใหม่ไปเก่า =====
   var PG_DATE = '@@PG_DATE@@', PG = '@@PG_DATA@@';
   var PG_IMG = 'https://www.pgsoft.com/uploads/Games/Images/';
+  // ===== ข้อมูล Pragmatic Play จาก pragmaticplay.com (RTP ในหน้าแต่ละเกม) — ชื่อ|RTP คั่นด้วย ; =====
+  var PP_DATE = '@@PP_DATE@@', PP = '@@PP_DATA@@';
 
   var PROV = [
-    ['pg', 'PG Soft', 'pgsoft.com'], ['pp', 'Pragmatic Play', ''], ['xo', 'SlotXO', ''], ['ns', 'Nextspin', ''], ['rs', 'RoyalSlot', '']
+    ['pg', 'PG Soft', 'pgsoft.com'], ['pp', 'Pragmatic Play', 'pragmaticplay.com'], ['xo', 'SlotXO', ''], ['ns', 'Nextspin', ''], ['rs', 'RoyalSlot', '']
   ];
   function games(k) {
+    var ex = (EXTRA[k] || []).map(function (a, i) { return { n: a[0], r: +a[1], w: a[2] || '', img: a[3] || '', i: -1 - i }; });
+    if (k === 'pp' && PP) return ex.concat(PP.split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: '', img: '', i: i }; }));
     if (k === 'pg') return PG.split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: a[2], img: a[3] ? PG_IMG + a[3] : '', i: i }; });
     return (EXTRA[k] || []).map(function (a, i) { return { n: a[0], r: +a[1], w: a[2] || '', img: a[3] || '', i: i }; });
   }
@@ -118,7 +122,7 @@
         return '<div class="rtR">' + (x.img ? '<img loading="lazy" alt="" src="' + esc(x.img) + '">' : '<span class="ph">' + esc(x.n.charAt(0)) + '</span>') +
           '<div><b>' + esc(x.n) + '</b>' + (x.w ? '<small>ชนะสูงสุด ' + esc(x.w) + '</small>' : '') + '<i><u data-w="' + pct + '" style="width:' + pct + '%"></u></i></div><em data-r="' + x.r + '">' + x.r.toFixed(2) + '%</em></div>';
       }).join('');
-      C.innerHTML = h + '<p class="rtN">' + (games(prov).length ? games(prov).length + ' เกม' + (p[2] ? ' · ที่มา ' + p[2] + (prov === 'pg' ? ' (ข้อมูล ณ ' + PG_DATE + ')' : '') : '') + '<br>' : '') +
+      C.innerHTML = h + '<p class="rtN">' + (games(prov).length ? games(prov).length + ' เกม' + (p[2] ? ' · ที่มา ' + p[2] + (prov === 'pg' ? ' (ข้อมูล ณ ' + PG_DATE + ')' : prov === 'pp' && PP_DATE ? ' (ข้อมูล ณ ' + PP_DATE + ')' : '') : '') + '<br>' : '') +
         'RTP คือค่าทางทฤษฎีจากการเล่นจำนวนมหาศาล ไม่ใช่โอกาสชนะในแต่ละครั้ง และไม่เปลี่ยนตามช่วงเวลา · ' +
         'ตัวเลขนี้คือค่าสูงสุดที่ค่ายประกาศ เว็บที่ให้บริการอาจตั้งเวอร์ชัน RTP ต่ำกว่านี้ ตรวจได้ในหน้าข้อมูลของแต่ละเกม · เล่นอย่างมีสติ 18+</p>';
       if (anim) countUp();
