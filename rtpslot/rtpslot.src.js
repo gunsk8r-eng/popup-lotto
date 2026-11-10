@@ -4,7 +4,7 @@
    ตั้งค่า (ไม่บังคับ) วางก่อนโค้ดนี้:
      window.RTP_OPT = { side: 'right', top: 50, btnText: 'RTP สล็อต' };
    เพิ่มเกมของค่ายอื่นเอง (ดูค่า RTP ได้ในหน้าข้อมูลเกม/ตารางจ่ายของแต่ละเกม):
-     window.RTP_EXTRA = { xo: [['ชื่อเกม', 96.5, '5000x', 'ลิงก์รูป (ไม่บังคับ)']], ns: [...], rs: [...] };
+     window.RTP_EXTRA = { xo: [['ชื่อเกม', 96.5, '5000x', 'ลิงก์รูป (ไม่บังคับ)']], rs: [...] };
 */
 (function () {
   var OPT = window.RTP_OPT || {}, EXTRA = window.RTP_EXTRA || {};
@@ -15,16 +15,20 @@
   var PG_IMG = 'https://www.pgsoft.com/uploads/Games/Images/';
   // ===== ข้อมูล Pragmatic Play จาก pragmaticplay.com (RTP ในหน้าแต่ละเกม) — ชื่อ|RTP คั่นด้วย ; =====
   var PP_DATE = '@@PP_DATE@@', PP = '@@PP_DATA@@', PP_IMG = 'https://www.pragmaticplay.com/wp-content/uploads/';
-  // ไอคอนอยู่ในไฟล์แยก popup-rtpslot-icons.js (window.RTP_PP_SPRITE = รูปรวมหลายเกม) — ไม่มีไฟล์นั้นก็ใช้รูปจากเว็บ Pragmatic
+  // ===== ข้อมูล Nextspin จาก nextspin.com (RTP ในหน้ารายละเอียดเกม) — ชื่อ|RTP||รูป =====
+  var NS_DATE = '@@NS_DATE@@', NS = '@@NS_DATA@@', NS_IMG = 'https://www.nextspin.com/';
+  // ไอคอนอยู่ในไฟล์แยก popup-rtpslot-icons.js (window.RTP_SPRITES = { pp: รูปรวม, ns: รูปรวม }) — ไม่มีไฟล์นั้นก็ใช้รูปจากเว็บค่าย
+  var SRC = { pp: [function () { return PP; }, PP_IMG], ns: [function () { return NS; }, NS_IMG] };
 
   var PROV = [
-    ['pg', 'PG Soft', 'pgsoft.com'], ['pp', 'Pragmatic Play', 'pragmaticplay.com'], ['xo', 'SlotXO', ''], ['ns', 'Nextspin', ''], ['rs', 'RoyalSlot', '']
+    ['pg', 'PG Soft', 'pgsoft.com'], ['pp', 'Pragmatic Play', 'pragmaticplay.com'], ['xo', 'SlotXO', ''], ['ns', 'Nextspin', 'nextspin.com'], ['rs', 'RoyalSlot', '']
   ];
-  function spriteIdx(n) { var S = window.RTP_PP_SPRITE; return S && S.idx[n] != null ? S.idx[n] : -1; }
-  var spriteCss = false;
+  function sprite(k) { var A = window.RTP_SPRITES || {}; return A[k] || (k === 'pp' && window.RTP_PP_SPRITE) || null; }
+  function spriteIdx(k, n) { var S = sprite(k); return S && S.idx[n] != null ? S.idx[n] : -1; }
+  var spriteCss = {};
   function games(k) {
     var ex = (EXTRA[k] || []).map(function (a, i) { return { n: a[0], r: +a[1], w: a[2] || '', img: a[3] || '', i: -1 - i }; });
-    if (k === 'pp' && PP) return ex.concat(PP.split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: a[2] || '', sp: spriteIdx(a[0]), img: a[3] ? PP_IMG + a[3] : '', i: i }; }));
+    if (SRC[k] && SRC[k][0]()) return ex.concat(SRC[k][0]().split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: a[2] || '', k: k, sp: spriteIdx(k, a[0]), img: a[3] ? SRC[k][1] + a[3] : '', i: i }; }));
     if (k === 'pg') return PG.split(';').map(function (s, i) { var a = s.split('|'); return { n: a[0], r: +a[1], w: a[2], img: a[3] ? PG_IMG + a[3] : '', i: i }; });
     return (EXTRA[k] || []).map(function (a, i) { return { n: a[0], r: +a[1], w: a[2] || '', img: a[3] || '', i: i }; });
   }
@@ -123,16 +127,17 @@
       else if (!list.length) h = '<p class="rtE">ไม่พบเกมที่ค้นหา</p>';
       else h = list.map(function (x) {
         var pct = Math.max(0, Math.min(100, (x.r - 90) * 12.5)); // แถบ: 90% = ว่าง, 98% = เต็ม
-        var S = window.RTP_PP_SPRITE;
+        var S = x.k && sprite(x.k);
         if (S && x.sp >= 0) {
-          if (!spriteCss) { spriteCss = true; var st2 = d.createElement('style'); st2.textContent = '.rtR .sp{display:block;flex:none;width:44px;height:44px;border-radius:10px;background:url(' + S.img + ') no-repeat;background-size:' + S.cols * 44 + 'px auto}'; d.head.appendChild(st2); }
-          return '<div class="rtR"><span class="sp" style="background-position:-' + (x.sp % S.cols) * 44 + 'px -' + Math.floor(x.sp / S.cols) * 44 + 'px"></span>' +
+          // รูปรวมใส่เป็น CSS ครั้งเดียวต่อค่าย แต่ละแถวแค่เลื่อนตำแหน่ง
+          if (!spriteCss[x.k]) { spriteCss[x.k] = 1; var st2 = d.createElement('style'); st2.textContent = '.rtR .sp-' + x.k + '{display:block;flex:none;width:44px;height:44px;border-radius:10px;background:url(' + S.img + ') no-repeat;background-size:' + S.cols * 44 + 'px auto}'; d.head.appendChild(st2); }
+          return '<div class="rtR"><span class="sp-' + x.k + '" style="background-position:-' + (x.sp % S.cols) * 44 + 'px -' + Math.floor(x.sp / S.cols) * 44 + 'px"></span>' +
             '<div><b>' + esc(x.n) + '</b>' + (x.w ? '<small>ชนะสูงสุด ' + esc(x.w) + '</small>' : '') + '<i><u data-w="' + pct + '" style="width:' + pct + '%"></u></i></div><em data-r="' + x.r + '">' + x.r.toFixed(2) + '%</em></div>';
         }
         return '<div class="rtR">' + (x.img ? '<img loading="lazy" alt="" src="' + esc(x.img) + '">' : '<span class="ph">' + esc(x.n.charAt(0)) + '</span>') +
           '<div><b>' + esc(x.n) + '</b>' + (x.w ? '<small>ชนะสูงสุด ' + esc(x.w) + '</small>' : '') + '<i><u data-w="' + pct + '" style="width:' + pct + '%"></u></i></div><em data-r="' + x.r + '">' + x.r.toFixed(2) + '%</em></div>';
       }).join('');
-      C.innerHTML = h + '<p class="rtN">' + (games(prov).length ? games(prov).length + ' เกม' + (p[2] ? ' · ที่มา ' + p[2] + (prov === 'pg' ? ' (ข้อมูล ณ ' + PG_DATE + ')' : prov === 'pp' && PP_DATE ? ' (ข้อมูล ณ ' + PP_DATE + ')' : '') : '') + '<br>' : '') +
+      C.innerHTML = h + '<p class="rtN">' + (games(prov).length ? games(prov).length + ' เกม' + (p[2] ? ' · ที่มา ' + p[2] + (prov === 'pg' ? ' (ข้อมูล ณ ' + PG_DATE + ')' : prov === 'pp' && PP_DATE ? ' (ข้อมูล ณ ' + PP_DATE + ')' : prov === 'ns' && NS_DATE ? ' (ข้อมูล ณ ' + NS_DATE + ')' : '') : '') + '<br>' : '') +
         'RTP คือค่าทางทฤษฎีจากการเล่นจำนวนมหาศาล ไม่ใช่โอกาสชนะในแต่ละครั้ง และไม่เปลี่ยนตามช่วงเวลา · ' +
         'ตัวเลขนี้คือค่าสูงสุดที่ค่ายประกาศ เว็บที่ให้บริการอาจตั้งเวอร์ชัน RTP ต่ำกว่านี้ ตรวจได้ในหน้าข้อมูลของแต่ละเกม · เล่นอย่างมีสติ 18+</p>';
       if (anim) countUp();

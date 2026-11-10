@@ -22,29 +22,36 @@ const API = 'https://api.pgsoft.com/Game/GetDefaultAllGame/language/en-US';
   const popular = fs.readFileSync(__dirname + '/pp-popular.txt', 'utf8').split('\n').map(s => s.trim()).filter(s => s && s[0] !== '#');
   const ppSel = popular.map(n => byName.get(norm(n))).filter(Boolean);
   if (ppSel.length !== popular.length) console.warn('pp-popular: ไม่พบ', popular.filter(n => !byName.has(norm(n))));
-  // ไอคอน: รูปรวม (sprite) จาก node rtpslot/pp-icons.js → ไฟล์แยก popup-rtpslot-icons.js (วางในช่อง JS อีกช่อง)
-  let icons = null;
-  try { icons = JSON.parse(fs.readFileSync(__dirname + '/pp-icons.json', 'utf8')); } catch (e) { console.warn('ไม่มี pp-icons.json — ใช้รูปจากเว็บ Pragmatic'); }
-  const iconFile = __dirname + '/popup-rtpslot-icons.js';
-  if (icons) {
-    const idx = {};
-    icons.names.forEach((n, k) => { idx[clean(n)] = k; });
-    fs.writeFileSync(iconFile, '/* ไอคอนเกม Pragmatic Play สำหรับ popup-rtpslot (' + icons.names.length + ' เกม) */\n' +
-      'window.RTP_PP_SPRITE=' + JSON.stringify({ cell: icons.cell, cols: icons.cols, idx, img: icons.sprite }) + ';\n');
+  // Nextspin: จาก rtpslot/ns.json (สร้างด้วย node rtpslot/ns-crawl.js) ทุกเกม
+  let ns = { date: '', games: [] };
+  try { ns = JSON.parse(fs.readFileSync(__dirname + '/ns.json', 'utf8')); } catch (e) { console.warn('ไม่มี ns.json — ข้าม Nextspin'); }
+  const nsData = ns.games.map(g => [clean(g[0]), g[1], g[2] || '', g[3] || ''].join('|')).join(';');
+  // ไอคอน: รูปรวม (sprite) ต่อค่าย จาก node rtpslot/icons.js [ns] → ไฟล์แยก popup-rtpslot-icons.js (วางในช่อง JS อีกช่อง)
+  const sprites = {}, iconFile = __dirname + '/popup-rtpslot-icons.js';
+  for (const k of ['pp', 'ns']) {
+    try {
+      const ic = JSON.parse(fs.readFileSync(__dirname + '/' + k + '-icons.json', 'utf8')), idx = {};
+      ic.names.forEach((n, i) => { idx[clean(n)] = i; });
+      sprites[k] = { cols: ic.cols, idx, img: ic.sprite };
+    } catch (e) { console.warn('ไม่มี ' + k + '-icons.json — ใช้รูปจากเว็บค่าย'); }
   }
+  const nIcons = Object.values(sprites).reduce((a, s) => a + Object.keys(s.idx).length, 0);
+  fs.writeFileSync(iconFile, '/* ไอคอนเกมสำหรับ popup-rtpslot (Pragmatic Play + Nextspin, ' + nIcons + ' เกม) */\n' +
+    'window.RTP_SPRITES=' + JSON.stringify(sprites) + ';\n');
   const ppData = ppSel.map(g => [clean(g[0]), g[1], '', g[2] || ''].join('|')).join(';');
   const thd = iso => iso ? new Date(iso + 'T12:00:00Z').toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' }) : '';
   const today = new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit', timeZone: 'Asia/Bangkok' });
   const src = fs.readFileSync(__dirname + '/rtpslot.src.js', 'utf8')
     .replace("'@@PG_DATA@@'", JSON.stringify(data)).replace("'@@PG_DATE@@'", JSON.stringify(today))
-    .replace("'@@PP_DATA@@'", JSON.stringify(ppData)).replace("'@@PP_DATE@@'", JSON.stringify(thd(pp.date)));
+    .replace("'@@PP_DATA@@'", JSON.stringify(ppData)).replace("'@@PP_DATE@@'", JSON.stringify(thd(pp.date)))
+    .replace("'@@NS_DATA@@'", JSON.stringify(nsData)).replace("'@@NS_DATE@@'", JSON.stringify(thd(ns.date)));
   const full = __dirname + '/popup-rtpslot.full.js';
   fs.writeFileSync(full, src);
   const min = execFileSync('npx', ['--yes', 'terser', full, '-c', '-m', '--comments', 'false'], { encoding: 'utf8' });
-  const head = '/* ป๊อปอัป RTP สล็อต (ค่าที่ค่ายประกาศ) — PG Soft ณ ' + today + (pp.games.length ? ' · Pragmatic Play ณ ' + thd(pp.date) : '') + "\n" +
+  const head = '/* ป๊อปอัป RTP สล็อต (ค่าที่ค่ายประกาศ) — PG Soft ณ ' + today + (pp.games.length ? ' · Pragmatic Play ณ ' + thd(pp.date) : '') + (ns.games.length ? ' · Nextspin ณ ' + thd(ns.date) : '') + "\n" +
     "   ตั้งค่า (ไม่บังคับ) วางก่อนโค้ดนี้: window.RTP_OPT = { side: 'right', top: 50 };\n" +
-    "   เพิ่มเกมค่ายอื่น: window.RTP_EXTRA = { xo: [['ชื่อเกม', 96.5, '5000x']], ns: [], rs: [] }; */\n";
+    "   เพิ่มเกมค่ายอื่น: window.RTP_EXTRA = { xo: [['ชื่อเกม', 96.5, '5000x']], rs: [] }; */\n";
   const out = __dirname + '/popup-rtpslot.js';
   fs.writeFileSync(out, head + min);
-  console.log('PG', slots.length, '· PP', ppSel.length, (icons ? '(ไอคอน ' + icons.names.length + ' ในไฟล์แยก ' + fs.statSync(iconFile).size + ' ไบต์)' : ''), 'เกม ·', Buffer.byteLength(head + min), 'ไบต์ →', out);
+  console.log('PG', slots.length, '· PP', ppSel.length, '· NS', ns.games.length, 'เกม · ไอคอน', nIcons, 'ในไฟล์แยก', fs.statSync(iconFile).size, 'ไบต์ · หลัก', Buffer.byteLength(head + min), 'ไบต์ →', out);
 })().catch(e => { console.error(e); process.exit(1); });
