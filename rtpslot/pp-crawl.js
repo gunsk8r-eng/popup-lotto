@@ -4,7 +4,7 @@ const fs = require('fs');
 const BASE = 'https://www.pragmaticplay.com/en/games/';
 const UA = { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; popup-rtpslot)' } };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-const dec = s => s.replace(/&#8217;|&rsquo;/g, "'").replace(/&#8211;|&ndash;/g, '-').replace(/&amp;/g, '&').replace(/&#0?39;/g, "'").replace(/&quot;/g, '"').trim();
+const dec = s => s.replace(/&#x([0-9a-f]+);?/gi, (_, h) => h.toLowerCase() === '2122' ? '' : String.fromCodePoint(parseInt(h, 16))).replace(/&#0*38;/g, '&').replace(/&#8217;|&rsquo;/g, "'").replace(/&#8211;|&ndash;/g, '-').replace(/&amp;/g, '&').replace(/&#0?39;/g, "'").replace(/&quot;/g, '"').trim();
 
 async function get(url) {
   for (let i = 0; i < 3; i++) {
